@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" fill="none">
+  <!-- Background elements -->
+  <circle cx="300" cy="200" r="150" fill="#f5f5f5" />
+  <circle cx="300" cy="200" r="120" fill="#f0f0f0" />
+  
+  <!-- Shopping bag with question mark -->
+  <path d="M230 160V130C230 107.909 247.909 90 270 90H330C352.091 90 370 107.909 370 130V160" stroke="#333" stroke-width="8" stroke-linecap="round"/>
+  <rect x="200" y="160" width="200" height="180" rx="15" fill="#4361ee" opacity="0.9"/>
+  
+  <!-- Question mark -->
+  <path d="M300 230C300 221.716 306.716 215 315 215C323.284 215 330 221.716 330 230C330 235.247 327.135 239.812 322.858 242.157C317.184 245.274 315 248.279 315 255" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="315" cy="280" r="8" fill="white"/>
+  
+  <!-- Decorative elements -->
+  <circle cx="150" cy="100" r="15" fill="#FF6B6B" opacity="0.7"/>
+  <circle cx="450" cy="120" r="20" fill="#20C997" opacity="0.7"/>
+  <circle cx="120" cy="300" r="25" fill="#FFC107" opacity="0.7"/>
+  <circle cx="480" cy="280" r="18" fill="#FF6B6B" opacity="0.7"/>
+  
+  <!-- Dotted lines -->
+  <circle cx="200" cy="150" r="3" fill="#333"/>
+  <circle cx="215" cy="150" r="3" fill="#333"/>
+  <circle cx="230" cy="150" r="3" fill="#333"/>
+  <circle cx="245" cy="150" r="3" fill="#333"/>
+  
+  <circle cx="400" cy="150" r="3" fill="#333"/>
+  <circle cx="385" cy="150" r="3" fill="#333"/>
+  <circle cx="370" cy="150" r="3" fill="#333"/>
+  <circle cx="355" cy="150" r="3" fill="#333"/>
+  
+  <!-- Search icon -->
+  <circle cx="450" cy="350" r="30" stroke="#333" stroke-width="8" fill="none"/>
+  <line x1="472" y1="372" x2="490" y2="390" stroke="#333" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Compass icon -->
+  <circle cx="150" cy="350" r="30" stroke="#333" stroke-width="3" fill="white"/>
+  <circle cx="150" cy="350" r="5" fill="#333"/>
+  <path d="M150 320L157 350L150 380L143 350L150 320Z" fill="#FF6B6B"/>
+</svg> 
