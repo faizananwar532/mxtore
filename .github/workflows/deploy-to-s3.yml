@@ -19,18 +19,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-      
-      - name: Configure S3 bucket for public access
-        run: |
-          # Make the S3 bucket publicly accessible
-          aws s3api put-public-access-block \
-            --bucket ${{ secrets.AWS_S3_BUCKET }} \
-            --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
-          
-          # Apply bucket policy for public read access
-          aws s3api put-bucket-policy \
-            --bucket ${{ secrets.AWS_S3_BUCKET }} \
-            --policy file://s3-bucket-policy.json
           
       - name: Deploy to S3
         run: |
@@ -44,8 +32,6 @@ jobs:
                     --exclude='README.md' \
                     --exclude='LICENSE' \
                     --exclude='*.yml' \
-                    --exclude='s3-routing-rules.json' \
-                    --exclude='s3-bucket-policy.json' \
                     ./ deploy_files/
           
           # Upload static assets (CSS, JS, images) with caching
