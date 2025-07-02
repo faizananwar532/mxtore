@@ -86,10 +86,3 @@ jobs:
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
             
-      - name: Output Website URLs
-        run: |
-          echo "Website is now available at the following URLs:"
-          echo "S3 website endpoint URL: http://${{ secrets.AWS_S3_BUCKET }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com/"
-          echo "CloudFront URL: https://${{ secrets.CLOUDFRONT_DOMAIN }}/"
-          echo ""
-          echo "NOTE: For best performance and clean URLs, please use the CloudFront URL" 
