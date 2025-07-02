@@ -1,4 +1,4 @@
-name: Deploy to S3
+name: Deploy to S3 and CloudFront
 
 on:
   push:
@@ -19,8 +19,8 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-          
-      - name: Deploy to S3
+      
+      - name: Prepare files for deployment
         run: |
           # Create a temporary directory for files to upload
           mkdir -p deploy_files
@@ -34,22 +34,40 @@ jobs:
                     --exclude='*.yml' \
                     ./ deploy_files/
           
+          # Create directories for clean URLs
+          mkdir -p deploy_files/about
+          mkdir -p deploy_files/contact
+          mkdir -p deploy_files/products
+          mkdir -p deploy_files/error
+          
+          # Copy HTML files to their respective directories as index.html
+          cp deploy_files/about.html deploy_files/about/index.html
+          cp deploy_files/contact.html deploy_files/contact/index.html
+          cp deploy_files/products.html deploy_files/products/index.html
+          cp deploy_files/error.html deploy_files/error/index.html
+          
+          # Keep the original HTML files at the root too (for backward compatibility)
+          
+      - name: Deploy to S3
+        run: |
           # Upload static assets (CSS, JS, images) with caching
           aws s3 sync deploy_files/ s3://${{ secrets.AWS_S3_BUCKET }} \
             --delete \
             --cache-control "max-age=86400" \
-            --exclude "*.html"
+            --exclude "*.html" \
+            --exclude "*/index.html"
           
           # Upload HTML files with no-cache directive
           aws s3 sync deploy_files/ s3://${{ secrets.AWS_S3_BUCKET }} \
             --exclude "*" \
             --include "*.html" \
+            --include "*/index.html" \
             --cache-control "no-cache,no-store,must-revalidate" \
             --content-type "text/html"
           
       - name: Configure S3 website routing
         run: |
-          # Apply the routing rules to enable clean URLs
+          # Apply the website configuration
           aws s3api put-bucket-website \
             --bucket ${{ secrets.AWS_S3_BUCKET }} \
             --website-configuration '{
@@ -58,56 +76,20 @@ jobs:
               },
               "ErrorDocument": {
                 "Key": "error.html"
-              },
-              "RoutingRules": [
-                {
-                  "Condition": {
-                    "KeyPrefixEquals": "about"
-                  },
-                  "Redirect": {
-                    "ReplaceKeyWith": "about.html"
-                  }
-                },
-                {
-                  "Condition": {
-                    "KeyPrefixEquals": "contact"
-                  },
-                  "Redirect": {
-                    "ReplaceKeyWith": "contact.html"
-                  }
-                },
-                {
-                  "Condition": {
-                    "KeyPrefixEquals": "products"
-                  },
-                  "Redirect": {
-                    "ReplaceKeyWith": "products.html"
-                  }
-                },
-                {
-                  "Condition": {
-                    "KeyPrefixEquals": "error"
-                  },
-                  "Redirect": {
-                    "ReplaceKeyWith": "error.html"
-                  }
-                }
-              ]
+              }
             }'
+      
+      - name: Invalidate CloudFront distribution
+        run: |
+          # Create CloudFront invalidation to clear cache
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
             
-      - name: Output website URL
+      - name: Output Website URLs
         run: |
           echo "Website is now available at the following URLs:"
-          echo "S3 bucket URL: https://${{ secrets.AWS_S3_BUCKET }}.s3.amazonaws.com/index.html"
-          echo "Website endpoint URL: http://${{ secrets.AWS_S3_BUCKET }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com/"
+          echo "S3 website endpoint URL: http://${{ secrets.AWS_S3_BUCKET }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com/"
+          echo "CloudFront URL: https://${{ secrets.CLOUDFRONT_DOMAIN }}/"
           echo ""
-          echo "NOTE: For proper website functionality including clean URLs, please use the website endpoint URL"
-          
-    #   - name: Invalidate CloudFront distribution
-    #     if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
-    #     env:
-    #       CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-    #     run: |
-    #       aws cloudfront create-invalidation \
-    #         --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
-    #         --paths "/*" 
+          echo "NOTE: For best performance and clean URLs, please use the CloudFront URL" 
