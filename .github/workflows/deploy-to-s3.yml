@@ -19,6 +19,18 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Configure S3 bucket for public access
+        run: |
+          # Make the S3 bucket publicly accessible
+          aws s3api put-public-access-block \
+            --bucket ${{ secrets.AWS_S3_BUCKET }} \
+            --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+          
+          # Apply bucket policy for public read access
+          aws s3api put-bucket-policy \
+            --bucket ${{ secrets.AWS_S3_BUCKET }} \
+            --policy file://s3-bucket-policy.json
           
       - name: Deploy to S3
         run: |
@@ -32,19 +44,78 @@ jobs:
                     --exclude='README.md' \
                     --exclude='LICENSE' \
                     --exclude='*.yml' \
+                    --exclude='s3-routing-rules.json' \
+                    --exclude='s3-bucket-policy.json' \
                     ./ deploy_files/
           
-          # Upload to S3 with appropriate cache settings
+          # Upload static assets (CSS, JS, images) with caching
           aws s3 sync deploy_files/ s3://${{ secrets.AWS_S3_BUCKET }} \
             --delete \
             --cache-control "max-age=86400" \
-            --exclude "*.html" # Don't cache HTML files
+            --exclude "*.html"
           
           # Upload HTML files with no-cache directive
           aws s3 sync deploy_files/ s3://${{ secrets.AWS_S3_BUCKET }} \
             --exclude "*" \
             --include "*.html" \
-            --cache-control "no-cache,no-store,must-revalidate"
+            --cache-control "no-cache,no-store,must-revalidate" \
+            --content-type "text/html"
+          
+      - name: Configure S3 website routing
+        run: |
+          # Apply the routing rules to enable clean URLs
+          aws s3api put-bucket-website \
+            --bucket ${{ secrets.AWS_S3_BUCKET }} \
+            --website-configuration '{
+              "IndexDocument": {
+                "Suffix": "index.html"
+              },
+              "ErrorDocument": {
+                "Key": "error.html"
+              },
+              "RoutingRules": [
+                {
+                  "Condition": {
+                    "KeyPrefixEquals": "about"
+                  },
+                  "Redirect": {
+                    "ReplaceKeyWith": "about.html"
+                  }
+                },
+                {
+                  "Condition": {
+                    "KeyPrefixEquals": "contact"
+                  },
+                  "Redirect": {
+                    "ReplaceKeyWith": "contact.html"
+                  }
+                },
+                {
+                  "Condition": {
+                    "KeyPrefixEquals": "products"
+                  },
+                  "Redirect": {
+                    "ReplaceKeyWith": "products.html"
+                  }
+                },
+                {
+                  "Condition": {
+                    "KeyPrefixEquals": "error"
+                  },
+                  "Redirect": {
+                    "ReplaceKeyWith": "error.html"
+                  }
+                }
+              ]
+            }'
+            
+      - name: Output website URL
+        run: |
+          echo "Website is now available at the following URLs:"
+          echo "S3 bucket URL: https://${{ secrets.AWS_S3_BUCKET }}.s3.amazonaws.com/index.html"
+          echo "Website endpoint URL: http://${{ secrets.AWS_S3_BUCKET }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com/"
+          echo ""
+          echo "NOTE: For proper website functionality including clean URLs, please use the website endpoint URL"
           
     #   - name: Invalidate CloudFront distribution
     #     if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
